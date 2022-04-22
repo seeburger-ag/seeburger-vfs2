@@ -32,6 +32,7 @@ import java.util.Iterator;
 import java.util.jar.Attributes;
 import java.util.jar.Attributes.Name;
 
+import org.apache.commons.vfs2.FileNotFolderException;
 import org.apache.commons.vfs2.FileObject;
 import org.apache.commons.vfs2.FileSystemException;
 import org.apache.commons.vfs2.FileSystemManager;
@@ -161,13 +162,12 @@ public class VFSClassLoader extends SecureClassLoader
         for (int i = 0; i < files.length; i++)
         {
             FileObject file = files[i];
-            if (!file.exists())
+            if (!safeExists(file))  // avoid FileNotFolderException
             {
                 // Does not exist - skip
                 continue;
             }
 
-            // TODO - use federation instead
             if (file.getType().hasContent() && manager.canCreateFileSystem(file))
             {
                 // Use contents of the file
@@ -405,7 +405,7 @@ public class VFSClassLoader extends SecureClassLoader
             final FileObject baseFile = it.next();
             final FileObject file =
                 baseFile.resolveFile(name, NameScope.DESCENDENT_OR_SELF);
-            if (file.exists())
+            if (safeExists(file)) // avoid FileNotFolderException
             {
                 result.add(new Resource(name, baseFile, file).getURL());
             }
@@ -429,7 +429,7 @@ public class VFSClassLoader extends SecureClassLoader
             final FileObject baseFile = it.next();
             final FileObject file =
                 baseFile.resolveFile(name, NameScope.DESCENDENT_OR_SELF);
-            if (file.exists())
+            if (safeExists(file))  // avoid FileNotFolderException
             {
                 return new Resource(name, baseFile, file);
             }
@@ -437,6 +437,30 @@ public class VFSClassLoader extends SecureClassLoader
 
         return null;
     }
+
+    /**
+     * Call exists() on file but swallow FileNotFolderException.
+     * <p>
+     * This can be used if you only want to know if it exists,
+     * but dont care about unexpected files in parent path. This
+     * wrapper will return in this case.
+     *
+     * @param file the file to test for existence, must not be null.
+     * @return true if the file exists, false if it does not exists or
+     *   if some parent is a file.
+     * @throws FileSystemException if exists throws, but not if it is {@link FileNotFolderException}.
+     */
+    private boolean safeExists(FileObject file) throws FileSystemException
+    {
+        try
+        {
+            return file.exists();
+        } catch (FileNotFolderException ignored)
+        {
+            return false;
+        }
+    }
+
 
     /**
      * Helper class for VFSClassLoader. This represents a resource loaded with
