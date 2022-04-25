@@ -168,6 +168,7 @@ public class VFSClassLoader extends SecureClassLoader
                 continue;
             }
 
+            // if it is a .jar file it needs to be overlayed with YIPFileSzstem
             if (file.getType().hasContent() && manager.canCreateFileSystem(file))
             {
                 // Use contents of the file
@@ -441,23 +442,32 @@ public class VFSClassLoader extends SecureClassLoader
     /**
      * Call exists() on file but swallow FileNotFolderException.
      * <p>
-     * This can be used if you only want to know if it exists,
-     * but dont care about unexpected files in parent path. This
-     * wrapper will return in this case.
+     * This can be used if you only want to know if {@code file} exists,
+     * but don't care about unexpected files in parent path. This
+     * wrapper will return {@code false} in this case.
      *
      * @param file the file to test for existence, must not be null.
      * @return true if the file exists, false if it does not exists or
      *   if some parent is a file.
-     * @throws FileSystemException if exists throws, but not if it is {@link FileNotFolderException}.
+     * @throws FileSystemException if exists throws, but not if it has {@link FileNotFolderException} cause.
      */
     private boolean safeExists(FileObject file) throws FileSystemException
     {
         try
         {
             return file.exists();
-        } catch (FileNotFolderException ignored)
+        }
+        catch (FileSystemException fse)
         {
-            return false;
+            // if file is in folder part the FNF exception might be thrown directly or one-level indirectly
+            if (fse instanceof FileNotFolderException || fse.getCause() instanceof FileNotFolderException)
+            {
+                return false;
+            }
+            else
+            {
+                throw fse;
+            }
         }
     }
 
