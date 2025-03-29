@@ -20,7 +20,7 @@
         <maven.build.timestamp.format>yyyyMMdd-HHmm</maven.build.timestamp.format>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>11</maven.compiler.release>
-        <version.commons-vfs2>2.2</version.commons-vfs2>
+        <version.commons-vfs2>2.10.0</version.commons-vfs2>
         <!-- surefire for Java11+ -->
         <argLine>--add-opens=java.base/java.lang=ALL-UNNAMED</argLine>
         <forkCount>1</forkCount>
